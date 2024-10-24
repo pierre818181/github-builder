@@ -73,22 +73,6 @@ def build_image(job):
         return_payload["status"] = "failed"
         return_payload["error_msg"] = str(e)
         return return_payload
-
-    logging.info("Bun install")
-    repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
-    try:
-        subprocess.run("mkdir -p /app/{}".format(build_id), shell=True, env=envs, check=True)
-    except subprocess.CalledProcessError as e:
-        error_msg = str(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
-        return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e) + error_msg
-        return return_payload
-    except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(str(e)))
-        return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e)
-        return return_payload
     
     logging.info("Creating cache directory")
     try:
@@ -105,6 +89,7 @@ def build_image(job):
         return_payload["error_msg"] = str(e)
         return return_payload
 
+    repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
         subprocess.run("depot build -t {} {} --file {} . --load --project {}".format(
             cloudflare_destination, 
