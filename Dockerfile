@@ -6,7 +6,8 @@ COPY . .
 
 RUN apt-get update && apt-get install -y \
     unzip \
-    docker.io
+    docker.io \
+    curl
 
 RUN curl -fsSL https://bun.sh/install | bash -s "bun-v1.1.33" && \
     ln -s $HOME/.bun/bin/bun /usr/local/bin/bun
