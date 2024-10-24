@@ -1,0 +1,3 @@
+[submodule "serverless-registry"]
+	path = serverless-registry
+	url = https://github.com/pierre818181/serverless-registry.git
