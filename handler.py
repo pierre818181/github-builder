@@ -91,7 +91,7 @@ def build_image(job):
 
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
-        subprocess.run('DEPOT_INSTALL_DIR="/root/.depot/bin" PATH="$DEPOT_INSTALL_DIR:$PATH" depot build -t {} {} --file {} . --load --project {}'.format(
+        subprocess.run('DEPOT_API_TOKEN=depot_project_05e3690d4fb5cf7e814beeeb9eb51eb0dc1b71dd98f5166e52edb270234ba7f1 DEPOT_INSTALL_DIR="/root/.depot/bin" PATH="$DEPOT_INSTALL_DIR:$PATH" depot build -t {} {} --file {} --load --project {}'.format(
             cloudflare_destination, 
             repo_dir, 
             dockerfile_path, 
