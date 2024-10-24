@@ -95,7 +95,7 @@ def build_image(job):
             cloudflare_destination, 
             repo_dir, 
             dockerfile_path, 
-            project_id), shell=True, check=True, env=envs)
+            project_id), cwd="/app", executable="/bin/bash", shell=True, check=True, env=envs)
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
         logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
