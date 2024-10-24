@@ -76,7 +76,7 @@ def build_image(job):
     
     logging.info("Creating cache directory")
     try:
-        subprocess.run("mkdir -p /app/{}/cache".format(build_id), shell=True, env=envs, check=True)
+        os.makedirs("/app/{build_id}/cache", exist_ok=True)
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
         logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
