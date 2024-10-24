@@ -13,7 +13,7 @@ RUN export DEPOT_INSTALL_DIR=/root/.depot/bin
 RUN export PATH=$DEPOT_INSTALL_DIR:$PATH
 RUN curl -L https://depot.dev/install-cli.sh | sh -s 2.76.0
 
-RUN ls -la
+RUN ls -la serverless-registry
 
 RUN cd serverless-registry/push && \
     bun install
