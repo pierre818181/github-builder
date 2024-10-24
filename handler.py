@@ -94,7 +94,7 @@ def build_image(job):
         subprocess.run('DEPOT_API_TOKEN=depot_project_05e3690d4fb5cf7e814beeeb9eb51eb0dc1b71dd98f5166e52edb270234ba7f1 DEPOT_INSTALL_DIR="/root/.depot/bin" PATH="$DEPOT_INSTALL_DIR:$PATH" depot build -t {} {} --file {} --load --project {}'.format(
             cloudflare_destination, 
             repo_dir, 
-            dockerfile_path, 
+            repo_dir + "/" + dockerfile_path, 
             project_id), cwd="/app", executable="/bin/bash", shell=True, check=True, env=envs)
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
