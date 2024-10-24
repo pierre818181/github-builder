@@ -76,7 +76,7 @@ def build_image(job):
     
     logging.info("Creating cache directory")
     try:
-        os.makedirs("/app/{build_id}/cache", exist_ok=True)
+        os.makedirs(f"/app/{build_id}/cache", exist_ok=True)
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
         logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
@@ -95,7 +95,7 @@ def build_image(job):
             cloudflare_destination, 
             repo_dir, 
             dockerfile_path, 
-            project_id))
+            project_id), shell=True, check=True, env=envs)
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
         logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
