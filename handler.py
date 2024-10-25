@@ -150,7 +150,8 @@ def build_image(job):
         subprocess.run(run_command, cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, check=True, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
+        normal_out = str(e.stdout)
+        logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg) + normal_out))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = str(e) + error_msg
         return return_payload
