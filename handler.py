@@ -127,7 +127,7 @@ def build_image(job):
         return return_payload
 
     logging.info("Pushing image to registry")
-    run_command = "REGISTRY_JWT_TOKEN={} USERNAME_REGISTRY=pierre bun run index.ts {}".format(jwt_token, cloudflare_destination)
+    run_command = "bun install && REGISTRY_JWT_TOKEN={} USERNAME_REGISTRY=pierre bun run index.ts {}".format(jwt_token, cloudflare_destination)
     try:
         subprocess.run(run_command, cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, check=True, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
