@@ -95,7 +95,7 @@ def build_image(job):
             cloudflare_destination, 
             repo_dir, 
             repo_dir + "/" + dockerfile_path, 
-            project_id), cwd="/app", executable="/bin/bash", shell=True, check=True, env=envs)
+            project_id), cwd="/app", executable="/bin/bash", capture_output=True, shell=True, check=True, env=envs)
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
         logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
@@ -113,7 +113,7 @@ def build_image(job):
     envs["UUID"] = build_id
     envs["REGISTRY_JWT_TOKEN"] = jwt_token
     try:
-        subprocess.run("bun install", cwd="/app/serverless-registry/push", env=envs, shell=True, executable="/bin/bash")
+        subprocess.run("bun install", cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
         logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
@@ -129,7 +129,7 @@ def build_image(job):
     logging.info("Pushing image to registry")
     run_command = "echo {} | USERNAME_REGISTRY=pierre bun run index.ts {}".format(jwt_token, cloudflare_destination)
     try:
-        subprocess.run(run_command, cwd="/app/serverless-registry/push", env=envs, shell=True, check=True, executable="/bin/bash")
+        subprocess.run(run_command, cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, check=True, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
         logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
@@ -144,7 +144,7 @@ def build_image(job):
     
     logging.info(f"Cleaning up")
     try:
-        subprocess.run("rm -rf /app/{}".format(build_id), shell=True, env=envs, check=True)
+        subprocess.run("rm -rf /app/{}".format(build_id), capture_output=True, shell=True, env=envs, check=True)
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
         logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
