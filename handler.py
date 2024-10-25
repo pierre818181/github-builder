@@ -114,6 +114,7 @@ def build_image(job):
     envs["REGISTRY_JWT_TOKEN"] = jwt_token
     try:
         subprocess.run("bun install", cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, executable="/bin/bash")
+        subprocess.run("bun install", cwd="/app/serverless-registry", capture_output=True, env=envs, shell=True, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
         logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
