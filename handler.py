@@ -34,6 +34,7 @@ def build_image(job):
         "image_name": cloudflare_destination
     }
 
+    envs = os.environ.copy()
     try:
         install_command = "curl -fsSL https://bun.sh/install | bash"
         subprocess.run(install_command, shell=True, executable="/bin/bash", check=True, capture_output=True, env=envs)
@@ -49,7 +50,6 @@ def build_image(job):
         return_payload["error_msg"] = str(e)
         return return_payload
 
-    envs = os.environ.copy()
     bun_bin_dir = os.path.expanduser("~/.bun/bin")    
     envs["DEPOT_INSTALL_DIR"] = "/root/.depot/bin"
     envs["PATH"]=f"{bun_bin_dir}:$DEPOT_INSTALL_DIR:$PATH"
