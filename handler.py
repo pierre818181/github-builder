@@ -34,6 +34,21 @@ def build_image(job):
         "image_name": cloudflare_destination
     }
 
+    try:
+        install_command = "curl -fsSL https://bun.sh/install | bash"
+        subprocess.run(install_command, shell=True, executable="/bin/bash", check=True, capture_output=True, env=envs)
+    except subprocess.CalledProcessError as e:
+        error_msg = str(e.stderr)
+        logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
+        return_payload["status"] = "failed"
+        return_payload["error_msg"] = str(e) + error_msg
+        return return_payload
+    except Exception as e:
+        logging.error("Something went wrong while downloading the repo: {}".format(str(e)))
+        return_payload["status"] = "failed"
+        return_payload["error_msg"] = str(e)
+        return return_payload
+
     envs = os.environ.copy()
     bun_bin_dir = os.path.expanduser("~/.bun/bin")    
     envs["DEPOT_INSTALL_DIR"] = "/root/.depot/bin"
