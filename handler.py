@@ -145,7 +145,7 @@ def build_image(job):
         return return_payload
 
     logging.info("Pushing image to registry")
-    run_command = "bun install && REGISTRY_JWT_TOKEN={} USERNAME_REGISTRY=pierre bun run index.ts {}".format(jwt_token, cloudflare_destination)
+    run_command = "REGISTRY_JWT_TOKEN={} USERNAME_REGISTRY=pierre bun run index.ts {}".format(jwt_token, cloudflare_destination)
     try:
         subprocess.run(run_command, cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, check=True, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
@@ -153,7 +153,7 @@ def build_image(job):
         normal_out = str(e.stdout)
         logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg) + normal_out))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e) + error_msg
+        return_payload["error_msg"] = str(e) + error_msg + "\n" + normal_out
         return return_payload
     except Exception as e:
         logging.error("Something went wrong while downloading the repo: {}".format(str(e)))
