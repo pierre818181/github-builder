@@ -18,9 +18,6 @@ RUN curl -L https://depot.dev/install-cli.sh | sh -s 2.76.0
 
 RUN ls -la serverless-registry
 
-RUN cd serverless-registry/push && \
-    bun install
-
 RUN pip install -r requirements.txt
 
 CMD ["python3", "handler.py"]
