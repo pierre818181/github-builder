@@ -113,7 +113,9 @@ def build_image(job):
     envs["UUID"] = build_id
     envs["REGISTRY_JWT_TOKEN"] = jwt_token
     try:
+        logging.info("Installing bun")
         subprocess.run("bun install", cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, executable="/bin/bash")
+        logging.info("Installing bun again")
         subprocess.run("bun install", cwd="/app/serverless-registry", capture_output=True, env=envs, shell=True, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
