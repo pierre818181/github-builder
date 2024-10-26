@@ -165,7 +165,7 @@ def build_image(job):
     
     logging.info(f"Cleaning up")
     try:
-        subprocess.run("rm -rf /app/{}".format(build_id), capture_output=True, shell=True, env=envs, check=True)
+        subprocess.run("rm -rf /app/{}".format(build_id), executable="/bin/bash", capture_output=True, shell=True, env=envs, check=True)
     except subprocess.CalledProcessError as e:
         error_msg = str(e.stderr)
         logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
