@@ -6,6 +6,8 @@ import tarfile
 import io
 import logging
 
+logging.getLogger().setLevel(logging.INFO)
+
 import re
 
 def build_image(job):
