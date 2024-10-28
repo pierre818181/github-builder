@@ -5,10 +5,24 @@ import requests
 import tarfile
 import io
 import logging
+import re
 
+class SensitiveFormatter(logging.Formatter):
+    """Formatter that removes sensitive information in urls."""
+    @staticmethod
+    def _filter(s):
+        return re.sub(r"r2-registry-production\.pierre-bastola\.workers\.dev\/", "", s)
+
+    def format(self, record):
+        original = logging.Formatter.format(self, record)
+        return self._filter(original)
+
+LOG_FORMAT = \
+    '%(asctime)s [%(threadName)-16s] %(filename)27s:%(lineno)-4d %(levelname)7s| %(message)s'
 logging.getLogger().setLevel(logging.INFO)
 
-import re
+for handler in logging.root.handlers:
+   handler.setFormatter(SensitiveFormatter(LOG_FORMAT))
 
 def build_image(job):
     job_input = job["input"]
@@ -26,7 +40,6 @@ def build_image(job):
     refresh_worker_flag = True
     if refresh_worker == "false":
         refresh_worker_flag = False
-    print(job_input)
 
     return_payload = {
         "refresh_worker": refresh_worker_flag,
@@ -105,10 +118,12 @@ def build_image(job):
         return_payload["status"] = "failed"
         return_payload["error_msg"] = str(e)
         return return_payload
+    builder_tkn = os.environ["GIT_INTEGRATIONS_SECRET"]
 
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
-        subprocess.run('DEPOT_API_TOKEN=depot_project_05e3690d4fb5cf7e814beeeb9eb51eb0dc1b71dd98f5166e52edb270234ba7f1 DEPOT_INSTALL_DIR="/root/.depot/bin" PATH="$DEPOT_INSTALL_DIR:$PATH" depot build -t {} {} --file {} --load --project {}'.format(
+        subprocess.run('DEPOT_API_TOKEN={} DEPOT_INSTALL_DIR="/root/.depot/bin" PATH="$DEPOT_INSTALL_DIR:$PATH" depot build -t {} {} --file {} --load --project {}'.format(
+            builder_tkn,
             cloudflare_destination, 
             repo_dir, 
             repo_dir + "/" + dockerfile_path, 
