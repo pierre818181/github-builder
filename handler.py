@@ -118,7 +118,7 @@ def build_image(job):
         return_payload["status"] = "failed"
         return_payload["error_msg"] = str(e)
         return return_payload
-    builder_tkn = os.environ["GIT_INTEGRATIONS_SECRET"]
+    builder_tkn = os.environ["RUNPOD_ENDPOINT_SECRET"]
 
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
