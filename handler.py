@@ -7,23 +7,27 @@ import io
 import logging
 import re
 
-class SensitiveFormatter(logging.Formatter):
-    """Formatter that removes sensitive information in urls."""
-    @staticmethod
-    def _filter(s):
-        text = re.sub(r"\bdepot\w*\b", "****", s, flags=re.IGNORECASE)
-        return re.sub(r"r2-registry-production\.pierre-bastola\.workers\.dev\/", "", text)
+regex_patterns = [
+    r"\bdepot\w*\b",
+    r"\bDEPOT\w*\b",
+    r"r2-registry-production\.pierre-bastola\.workers\.dev\/",
+]
 
-    def format(self, record):
-        original = logging.Formatter.format(self, record)
-        return self._filter(original)
+class SensitiveDataFilter(logging.Filter):
+    patterns = regex_patterns
+    def filter(self, record):
+        record.msg = self.mask_sensitive_data(record.msg)
+        return True
+
+    def mask_sensitive_data(self, message):
+        for pattern in self.patterns:
+            message = re.sub(pattern, "******", message)
+        return message
 
 LOG_FORMAT = \
     '%(asctime)s [%(threadName)-16s] %(filename)27s:%(lineno)-4d %(levelname)7s| %(message)s'
 logging.getLogger().setLevel(logging.INFO)
 
-for handler in logging.root.handlers:
-   handler.setFormatter(SensitiveFormatter(LOG_FORMAT))
 
 def build_image(job):
     job_input = job["input"]
