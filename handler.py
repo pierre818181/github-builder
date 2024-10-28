@@ -11,7 +11,8 @@ class SensitiveFormatter(logging.Formatter):
     """Formatter that removes sensitive information in urls."""
     @staticmethod
     def _filter(s):
-        return re.sub(r"r2-registry-production\.pierre-bastola\.workers\.dev\/", "", s)
+        text = re.sub(r"\bdepot\w*\b", "****", s, flags=re.IGNORECASE)
+        return re.sub(r"r2-registry-production\.pierre-bastola\.workers\.dev\/", "", text)
 
     def format(self, record):
         original = logging.Formatter.format(self, record)
