@@ -28,6 +28,9 @@ LOG_FORMAT = \
     '%(asctime)s [%(threadName)-16s] %(filename)27s:%(lineno)-4d %(levelname)7s| %(message)s'
 logging.getLogger().setLevel(logging.INFO)
 
+def parse_logs(s):
+    return s.replace("depot", "docker").replace("DEPOT", "DOCKER").replace(os.environ["RUNPOD_ENDPOINT_SECRET"], "*****").replace("r2-registry-production.pierre-bastola.workers.dev", "*****")
+
 
 def build_image(job):
     job_input = job["input"]
@@ -59,15 +62,15 @@ def build_image(job):
         install_command = "curl -fsSL https://bun.sh/install | bash"
         subprocess.run(install_command, shell=True, executable="/bin/bash", check=True, capture_output=True, env=envs)
     except subprocess.CalledProcessError as e:
-        error_msg = str(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
+        error_msg = parse_logs(e.stderr)
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e) + error_msg
+        return_payload["error_msg"] = parse_logs(e) + error_msg
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(str(e)))
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e)
+        return_payload["error_msg"] = parse_logs(e)
         return return_payload
 
     bun_bin_dir = os.path.expanduser("~/.bun/bin")    
@@ -85,9 +88,9 @@ def build_image(job):
         response = requests.get(api_url, headers=headers, stream=True)
         response.raise_for_status()
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(str(e)))
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e)
+        return_payload["error_msg"] = parse_logs(e)
         return return_payload
 
     logging.info(f"Extracting {github_repo} at {ref}")
@@ -98,30 +101,30 @@ def build_image(job):
             tar.extractall(path=temp_dir)
         extracted_dir = next(os.walk(temp_dir))[1][0]
     except subprocess.CalledProcessError as e:
-        error_msg = str(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
+        error_msg = parse_logs(e.stderr)
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e) + error_msg
+        return_payload["error_msg"] = parse_logs(e) + error_msg
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(str(e)))
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e)
+        return_payload["error_msg"] = parse_logs(e)
         return return_payload
     
     logging.info("Creating cache directory")
     try:
         os.makedirs(f"/app/{build_id}/cache", exist_ok=True)
     except subprocess.CalledProcessError as e:
-        error_msg = str(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
+        error_msg = parse_logs(e.stderr)
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e) + error_msg
+        return_payload["error_msg"] = parse_logs(e) + error_msg
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(str(e)))
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e)
+        return_payload["error_msg"] = parse_logs(e)
         return return_payload
     builder_tkn = os.environ["RUNPOD_ENDPOINT_SECRET"]
 
@@ -134,15 +137,15 @@ def build_image(job):
             repo_dir + "/" + dockerfile_path, 
             project_id), cwd="/app", executable="/bin/bash", capture_output=True, shell=True, check=True, env=envs)
     except subprocess.CalledProcessError as e:
-        error_msg = str(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
+        error_msg = parse_logs(e.stderr)
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e) + error_msg
+        return_payload["error_msg"] = parse_logs(e) + error_msg
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(str(e)))
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e)
+        return_payload["error_msg"] = parse_logs(e)
         return return_payload
 
     logging.info("Installing dependencies")
@@ -155,15 +158,15 @@ def build_image(job):
         logging.info("Installing bun again")
         subprocess.run("bun install", cwd="/app/serverless-registry", capture_output=True, env=envs, shell=True, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
-        error_msg = str(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
+        error_msg = parse_logs(e.stderr)
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e) + error_msg
+        return_payload["error_msg"] = parse_logs(e) + error_msg
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(str(e)))
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e)
+        return_payload["error_msg"] = parse_logs(e)
         return return_payload
 
     logging.info("Pushing image to registry")
@@ -171,31 +174,31 @@ def build_image(job):
     try:
         subprocess.run(run_command, cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, check=True, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
-        error_msg = str(e.stderr)
-        normal_out = str(e.stdout)
-        logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg) + normal_out))
+        error_msg = parse_logs(e.stderr)
+        normal_out = parse_logs(e.stdout)
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg) + normal_out))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = error_msg + "\n" + normal_out
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(str(e)))
+        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = str(e)
+        return_payload["error_msg"] = parse_logs(e)
         return return_payload
     
     # logging.info(f"Cleaning up")
     # try:
     #     subprocess.run("rm -rf /app/{}".format(build_id), executable="/bin/bash", capture_output=True, shell=True, env=envs, check=True)
     # except subprocess.CalledProcessError as e:
-    #     error_msg = str(e.stderr)
-    #     logging.error("Something went wrong while downloading the repo: {}".format(str(error_msg)))
+    #     error_msg = parse_logs(e.stderr)
+    #     logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
     #     return_payload["status"] = "failed"
-    #     return_payload["error_msg"] = str(e) + error_msg
+    #     return_payload["error_msg"] = parse_logs(e) + error_msg
     #     return return_payload
     # except Exception as e:
-    #     logging.error("Something went wrong while downloading the repo: {}".format(str(e)))
+    #     logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
     #     return_payload["status"] = "failed"
-    #     return_payload["error_msg"] = str(e)
+    #     return_payload["error_msg"] = parse_logs(e)
     #     return return_payload
 
     return return_payload
