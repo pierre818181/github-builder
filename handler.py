@@ -7,30 +7,12 @@ import io
 import logging
 import re
 
-regex_patterns = [
-    r"\bdepot\w*\b",
-    r"\bDEPOT\w*\b",
-    r"r2-registry-production\.pierre-bastola\.workers\.dev\/",
-]
-
-class SensitiveDataFilter(logging.Filter):
-    patterns = regex_patterns
-    def filter(self, record):
-        record.msg = self.mask_sensitive_data(record.msg)
-        return True
-
-    def mask_sensitive_data(self, message):
-        for pattern in self.patterns:
-            message = re.sub(pattern, "******", message)
-        return message
-
 LOG_FORMAT = \
     '%(asctime)s [%(threadName)-16s] %(filename)27s:%(lineno)-4d %(levelname)7s| %(message)s'
 logging.getLogger().setLevel(logging.INFO)
 
 def parse_logs(s):
-    return s.replace("depot", "docker").replace("DEPOT", "DOCKER").replace(os.environ["RUNPOD_ENDPOINT_SECRET"], "*****").replace("r2-registry-production.pierre-bastola.workers.dev", "*****")
-
+    return s.replace("depot", "docker").replace("DEPOT", "DOCKER").replace(str(os.environ["GIT_INTEGRATIONS_SECRET"]), "*****").replace("r2-registry-production.pierre-bastola.workers.dev", "*****")
 
 def build_image(job):
     job_input = job["input"]
@@ -126,7 +108,7 @@ def build_image(job):
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(e)
         return return_payload
-    builder_tkn = os.environ["RUNPOD_ENDPOINT_SECRET"]
+    builder_tkn = os.environ["GIT_INTEGRATIONS_SECRET"]
 
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
