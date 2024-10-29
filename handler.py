@@ -12,7 +12,7 @@ LOG_FORMAT = \
 logging.getLogger().setLevel(logging.INFO)
 
 def parse_logs(s):
-    return s.replace("depot", "docker").replace("DEPOT", "DOCKER").replace(str(os.environ["GIT_INTEGRATIONS_SECRET"]), "*****").replace("r2-registry-production.pierre-bastola.workers.dev", "*****")
+    return str(s).replace("depot", "docker").replace("DEPOT", "DOCKER").replace(str(os.environ["GIT_INTEGRATIONS_SECRET"]), "*****").replace("r2-registry-production.pierre-bastola.workers.dev", "*****")
 
 def build_image(job):
     job_input = job["input"]
@@ -122,12 +122,12 @@ def build_image(job):
         error_msg = parse_logs(e.stderr)
         logging.error("Something went wrong building the docker container: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = "Something went wrong. Please view the endpoint logs for the specific worker."
+        return_payload["error_msg"] = "Something went wrong. Please view the endpoint logs for this specific worker."
         return return_payload
     except Exception as e:
         logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = "Something went wrong. Please view the endpoint logs for the specific worker."
+        return_payload["error_msg"] = "Something went wrong. Please view the endpoint logs for this specific worker."
         return return_payload
 
     logging.info("Installing dependencies")
