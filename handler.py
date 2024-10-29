@@ -138,14 +138,14 @@ def build_image(job):
             project_id), cwd="/app", executable="/bin/bash", capture_output=True, shell=True, check=True, env=envs)
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
+        logging.error("Something went wrong building the docker container: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = parse_logs(e) + error_msg
+        return_payload["error_msg"] = "Something went wrong. Please view the endpoint logs for the specific worker."
         return return_payload
     except Exception as e:
         logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = parse_logs(e)
+        return_payload["error_msg"] = "Something went wrong. Please view the endpoint logs for the specific worker."
         return return_payload
 
     logging.info("Installing dependencies")
@@ -178,7 +178,7 @@ def build_image(job):
         normal_out = parse_logs(e.stdout)
         logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg) + normal_out))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = error_msg + "\n" + normal_out
+        return_payload["error_msg"] = parse_logs(error_msg + "\n" + normal_out)
         return return_payload
     except Exception as e:
         logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
