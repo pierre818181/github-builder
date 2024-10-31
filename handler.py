@@ -6,6 +6,9 @@ import tarfile
 import io
 import logging
 import re
+import requests
+import json
+from datetime import datetime
 
 LOG_FORMAT = \
     '%(asctime)s [%(threadName)-16s] %(filename)27s:%(lineno)-4d %(levelname)7s| %(message)s'
@@ -14,14 +17,32 @@ logging.getLogger().setLevel(logging.INFO)
 def parse_logs(s):
     return str(s).replace("depot", "docker").replace("DEPOT", "DOCKER").replace(str(os.environ["GIT_INTEGRATIONS_SECRET"]), "*****").replace("r2-registry-production.pierre-bastola.workers.dev", "*****")
 
-token = "p.eyJ1IjogImZhYzExMWQ5LWNiOWUtNDEyMi1hNDA0LTU4ODY3NzM4ZjU1YSIsICJpZCI6ICJjYmE4ZTliYy1hOWI5LTQxYWEtODhkNi1lOGFmMmFkNDViMTIiLCAiaG9zdCI6ICJ1c19lYXN0In0.bsqX-pnatNjiTZDr68z_1myA_lUQczRlJT284yDewsM"
+tinybird_auth_token = os.environ["TINYBIRD_APPEND_ONLY_TOKEN"]
 
+tinybird_url = "https://api.us-east.tinybird.co/v0"
 buffer = []
-def send_to_tinybird(log, last_line, token):
+def send_to_tinybird(build_id, level, log, last_line):
+    log = { 
+        "buildId": build_id, 
+        "level": level, 
+        "workerId": os.environ["RUNPOD_POD_ID"], 
+        "message": log,
+        "timestamp": datetime.now()
+    }
     buffer.append(log)
     if len(buffer) == 4 or (last_line and len(buffer) > 0):
-        pass
-        # make the api call
+        url = f"{tinybird_url}/events?wait=true&name=github_build_logs"
+        data = "\n".join([json.dumps(record) for record in buffer])
+        headers = {
+            "Authorization": f"Bearer {tinybird_auth_token}",
+            "Content-Type": "text/plain",
+        }
+        
+        response = requests.post(url, data=data, headers=headers, timeout=10)
+        response.raise_for_status()
+        buffer = []
+
+    return True
 
 def build_image(job):
     job_input = job["input"]
@@ -135,8 +156,7 @@ def build_image(job):
             repo_dir + "/" + dockerfile_path, 
             project_id), cwd="/app", executable="/bin/bash", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=envs)
         for line in iter(process.stdout.readline, ""):
-
-            print(line, end="")
+            send_to_tinybird(build_id, "INFO", str(line), False)
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
         logging.error("Something went wrong building the docker container: {}".format(parse_logs(error_msg)))
@@ -148,6 +168,7 @@ def build_image(job):
         return_payload["status"] = "failed"
         return_payload["error_msg"] = "Something went wrong. Please view the debug logs."
         return return_payload
+    send_to_tinybird(build_id, "INFO", str("Build complete."), True)
 
     logging.info("Installing dependencies")
     envs["USERNAME_REGISTRY"] = username_registry
