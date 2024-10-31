@@ -14,6 +14,15 @@ logging.getLogger().setLevel(logging.INFO)
 def parse_logs(s):
     return str(s).replace("depot", "docker").replace("DEPOT", "DOCKER").replace(str(os.environ["GIT_INTEGRATIONS_SECRET"]), "*****").replace("r2-registry-production.pierre-bastola.workers.dev", "*****")
 
+token = "p.eyJ1IjogImZhYzExMWQ5LWNiOWUtNDEyMi1hNDA0LTU4ODY3NzM4ZjU1YSIsICJpZCI6ICJjYmE4ZTliYy1hOWI5LTQxYWEtODhkNi1lOGFmMmFkNDViMTIiLCAiaG9zdCI6ICJ1c19lYXN0In0.bsqX-pnatNjiTZDr68z_1myA_lUQczRlJT284yDewsM"
+
+buffer = []
+def send_to_tinybird(log, last_line, token):
+    buffer.append(log)
+    if len(buffer) == 4 or (last_line and len(buffer) > 0):
+        pass
+        # make the api call
+
 def build_image(job):
     job_input = job["input"]
     dockerfile_path = job_input["dockerfile_path"]
@@ -58,6 +67,12 @@ def build_image(job):
     bun_bin_dir = os.path.expanduser("~/.bun/bin")    
     envs["DEPOT_INSTALL_DIR"] = "/root/.depot/bin"
     envs["PATH"]=f"{bun_bin_dir}:$DEPOT_INSTALL_DIR:$PATH"
+
+    if envs["TINYBIRD_APPEND_ONLY_TOKEN"] is None:
+        logging.error("Tinybird append only log has not been added.")
+        return_payload["status"] = "failed"
+        return_payload["error_msg"] = parse_logs(e)
+        return return_payload
 
     logging.info(f"Downloading {github_repo} at {ref}")
     api_url = f"https://api.github.com/repos/{github_repo.split('/')[-2]}/{github_repo.split('/')[-1]}/tarball/{ref}"
@@ -110,24 +125,28 @@ def build_image(job):
         return return_payload
     builder_tkn = os.environ["GIT_INTEGRATIONS_SECRET"]
 
+    envs["DEPOT_API_TOKEN"] = builder_tkn
+    envs["DEPOT_INSTALL_DIR"] = "/root/.depot/bin"
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
-        subprocess.run('DEPOT_API_TOKEN={} DEPOT_INSTALL_DIR="/root/.depot/bin" PATH="$DEPOT_INSTALL_DIR:$PATH" depot build -t {} {} --file {} --load --project {}'.format(
-            builder_tkn,
+        process = subprocess.Popen('PATH="$DEPOT_INSTALL_DIR:$PATH" depot build -t {} {} --file {} --load --project {}'.format(
             cloudflare_destination, 
             repo_dir, 
             repo_dir + "/" + dockerfile_path, 
-            project_id), cwd="/app", executable="/bin/bash", capture_output=True, shell=True, check=True, env=envs)
+            project_id), cwd="/app", executable="/bin/bash", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=envs)
+        for line in iter(process.stdout.readline, ""):
+
+            print(line, end="")
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
         logging.error("Something went wrong building the docker container: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = "Something went wrong. Please view the endpoint logs for this specific worker."
+        return_payload["error_msg"] = "Something went wrong. Please view the debug logs."
         return return_payload
     except Exception as e:
         logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = "Something went wrong. Please view the endpoint logs for this specific worker."
+        return_payload["error_msg"] = "Something went wrong. Please view the debug logs."
         return return_payload
 
     logging.info("Installing dependencies")
