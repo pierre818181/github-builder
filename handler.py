@@ -153,6 +153,7 @@ def build_image(job):
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
         command = [
+            f'PATH="{bun_bin_dir}:$DEPOT_INSTALL_DIR:$PATH"'
             'depot', 'build',
             '-t', cloudflare_destination,
             repo_dir,
