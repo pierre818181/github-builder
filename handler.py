@@ -153,7 +153,7 @@ def build_image(job):
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
         command = [
-            f'PATH="{bun_bin_dir}:$DEPOT_INSTALL_DIR:$PATH"'
+            f'PATH="$DEPOT_INSTALL_DIR:$PATH"'
             'depot', 'build',
             '-t', cloudflare_destination,
             repo_dir,
@@ -184,6 +184,7 @@ def build_image(job):
     envs["USERNAME_REGISTRY"] = username_registry
     envs["UUID"] = build_id
     envs["REGISTRY_JWT_TOKEN"] = jwt_token
+    envs["PATH"]=f"{bun_bin_dir}:$DEPOT_INSTALL_DIR:$PATH"
     try:
         logging.info("Installing bun")
         subprocess.run("bun install", cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, executable="/bin/bash")
