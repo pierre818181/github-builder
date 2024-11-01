@@ -174,6 +174,11 @@ def build_image(job):
                 content = line.strip()
                 print(f"log: {content}")
                 send_to_tinybird(build_id, "INFO", content, False)
+        with process.stderr as error:
+            for line in output:
+                content = line.strip()
+                print(f"log: {content}")
+                send_to_tinybird(build_id, "ERROR", content, False)
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
         logging.error("Something went wrong building the docker image: {}".format(parse_logs(error_msg)))
