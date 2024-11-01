@@ -1,3 +1,4 @@
+import sys
 import runpod
 import subprocess
 import os
@@ -86,9 +87,13 @@ def build_image(job):
         return_payload["error_msg"] = parse_logs(e)
         return return_payload
 
-    bun_bin_dir = os.path.expanduser("~/.bun/bin")    
+    bun_bin_dir = os.path.expanduser("~/.bun/bin")
+    if bun_bin_dir not in sys.path:
+        sys.path.append(bun_bin_dir) 
     envs["DEPOT_INSTALL_DIR"] = "/root/.depot/bin"
-    envs["PATH"]=f"{bun_bin_dir}:$DEPOT_INSTALL_DIR:$PATH"
+    if "/root/.depot/bin" not in sys.path:
+        sys.path.append("/root/.depot/bin")
+    envs["PATH"]=f"{bun_bin_dir}:$PATH"
 
     if envs["TINYBIRD_APPEND_ONLY_TOKEN"] is None:
         logging.error("Tinybird append only log has not been added.")
@@ -149,6 +154,9 @@ def build_image(job):
 
     envs["DEPOT_API_TOKEN"] = builder_tkn
     envs["DEPOT_INSTALL_DIR"] = "/root/.depot/bin"
+    if "/root/.depot/bin" not in sys.path:
+        sys.path.append("/root/.depot/bin")
+
     envs["PATH"] = f"$DEPOT_INSTALL_DIR:$PATH"
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
