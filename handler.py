@@ -168,14 +168,21 @@ def build_image(job):
             '--load',
             '--project', project_id
         ]
-        process = subprocess.Popen(command, cwd="/app", bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=envs, text=True, executable="/bin/bash")
+        process = subprocess.Popen(command, 
+                                   cwd="/app", 
+                                   bufsize=1, 
+                                   stdout=subprocess.PIPE, 
+                                   stderr=subprocess.PIPE, 
+                                   env=envs, 
+                                   text=True, 
+                                   executable="/bin/bash")
         with process.stdout as output:
             for line in output:
                 content = line.strip()
                 print(f"log: {content}")
                 send_to_tinybird(build_id, "INFO", content, False)
         with process.stderr as error:
-            for line in output:
+            for line in error:
                 content = line.strip()
                 print(f"log: {content}")
                 send_to_tinybird(build_id, "ERROR", content, False)
