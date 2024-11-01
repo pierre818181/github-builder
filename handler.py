@@ -161,7 +161,7 @@ def build_image(job):
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
         command = [
-            'depot', 'build',
+            '/root/.depot/bin/depot', 'build',
             '-t', cloudflare_destination,
             repo_dir,
             '--file', f"{repo_dir}/{dockerfile_path}",
