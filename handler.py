@@ -168,7 +168,7 @@ def build_image(job):
             '--load',
             '--project', project_id
         ]
-        process = subprocess.Popen(command, cwd="/app", bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=envs, text=True)
+        process = subprocess.Popen(command, cwd="/app", bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=envs, text=True, executable="/bin/bash")
         with process.stdout as output:
             for line in output:
                 content = line.strip()
