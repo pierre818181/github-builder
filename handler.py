@@ -157,11 +157,10 @@ def build_image(job):
     if "/root/.depot/bin" not in sys.path:
         sys.path.append("/root/.depot/bin")
 
-    envs["PATH"] = f"$DEPOT_INSTALL_DIR:$PATH"
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
         command = [
-            '/root/.depot/bin/depot', 'build',
+            'depot', 'build',
             '-t', cloudflare_destination,
             repo_dir,
             '--file', f"{repo_dir}/{dockerfile_path}",
