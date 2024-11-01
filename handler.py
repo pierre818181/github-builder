@@ -164,7 +164,7 @@ def build_image(job):
         with process.stdout as output:
             for line in output:
                 content = line.strip()
-                logging.info(f"log: {content}")
+                print(f"log: {content}")
                 send_to_tinybird(build_id, "INFO", content, False)
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
