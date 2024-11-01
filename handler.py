@@ -160,10 +160,12 @@ def build_image(job):
             '--load',
             '--project', project_id
         ]
-        process = subprocess.Popen(command, cwd="/app", executable="/bin/bash", stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=envs, text=True)
-        for line in iter(process.stdout.readline, ''):
-            logging.info(f"log: {str(line.decode('utf-8'))}")
-            send_to_tinybird(build_id, "INFO", str(line.decode('utf-8')), False)
+        process = subprocess.Popen(command, cwd="/app", bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=envs, text=True)
+        with process.stdout as output:
+            for line in output:
+                content = line.strip()
+                logging.info(f"log: {content}")
+                send_to_tinybird(build_id, "INFO", content, False)
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
         logging.error("Something went wrong building the docker image: {}".format(parse_logs(error_msg)))
