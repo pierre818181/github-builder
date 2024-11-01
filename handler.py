@@ -149,14 +149,19 @@ def build_image(job):
 
     envs["DEPOT_API_TOKEN"] = builder_tkn
     envs["DEPOT_INSTALL_DIR"] = "/root/.depot/bin"
+    envs["PATH"] = "$DEPOT_INSTALL_DIR:$PATH"
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
-        process = subprocess.Popen('PATH="$DEPOT_INSTALL_DIR:$PATH" depot build -t {} {} --file {} --load --project {}'.format(
-            cloudflare_destination, 
-            repo_dir, 
-            repo_dir + "/" + dockerfile_path, 
-            project_id), cwd="/app", executable="/bin/bash", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=envs)
-        for line in iter(process.stdout.readline, b''):
+        command = [
+            'depot', 'build',
+            '-t', cloudflare_destination,
+            repo_dir,
+            '--file', f"{repo_dir}/{dockerfile_path}",
+            '--load',
+            '--project', project_id
+        ]
+        process = subprocess.Popen(command, cwd="/app", executable="/bin/bash", stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=envs, text=True)
+        for line in iter(process.stdout.readline, ''):
             logging.info(f"log: {str(line.decode('utf-8'))}")
             send_to_tinybird(build_id, "INFO", str(line.decode('utf-8')), False)
     except subprocess.CalledProcessError as e:
