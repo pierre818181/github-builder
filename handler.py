@@ -149,7 +149,7 @@ def build_image(job):
 
     envs["DEPOT_API_TOKEN"] = builder_tkn
     envs["DEPOT_INSTALL_DIR"] = "/root/.depot/bin"
-    envs["PATH"] = "$DEPOT_INSTALL_DIR:$PATH"
+    envs["PATH"] = f"{bun_bin_dir}:$DEPOT_INSTALL_DIR:$PATH"
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
         command = [
