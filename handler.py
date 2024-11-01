@@ -16,7 +16,7 @@ LOG_FORMAT = \
 logging.getLogger().setLevel(logging.INFO)
 
 def parse_logs(s):
-    return str(s).replace("depot", "docker").replace("DEPOT", "DOCKER").replace(str(os.environ["GIT_INTEGRATIONS_SECRET"]), "*****").replace("r2-registry-production.pierre-bastola.workers.dev", "*****")
+    return str(s).replace("depot", "******").replace("DEPOT", "******").replace(str(os.environ["GIT_INTEGRATIONS_SECRET"]), "*****").replace("r2-registry-production.pierre-bastola.workers.dev", "*****")
 
 tinybird_auth_token = os.environ["TINYBIRD_APPEND_ONLY_TOKEN"]
 
@@ -31,7 +31,7 @@ def send_to_tinybird(build_id, level, log, last_line):
         "message": log,
         "timestamp": datetime.now()
     }
-    buffer.append(log)
+    buffer.append(parse_logs(log))
     if len(buffer) == 4 or (last_line and len(buffer) > 0):
         url = f"{tinybird_url}/events?wait=true&name=github_build_logs"
         data = "\n".join([json.dumps(record, default=str) for record in buffer])
@@ -174,12 +174,12 @@ def build_image(job):
         with process.stdout as output:
             for line in output:
                 content = line.strip()
-                print(f"log: {content}")
+                print(f"{content}")
                 send_to_tinybird(build_id, "INFO", content, False)
         with process.stderr as error:
             for line in error:
                 content = line.strip()
-                print(f"log: {content}")
+                print(f"{content}")
                 send_to_tinybird(build_id, "ERROR", content, False)
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
