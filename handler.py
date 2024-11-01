@@ -22,6 +22,7 @@ tinybird_auth_token = os.environ["TINYBIRD_APPEND_ONLY_TOKEN"]
 tinybird_url = "https://api.us-east.tinybird.co/v0"
 buffer = []
 def send_to_tinybird(build_id, level, log, last_line):
+    global buffer
     log = { 
         "buildId": build_id, 
         "level": level, 
@@ -75,12 +76,12 @@ def build_image(job):
         subprocess.run(install_command, shell=True, executable="/bin/bash", check=True, capture_output=True, env=envs)
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
+        logging.error("Something went wrong while installing bun: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(e) + error_msg
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
+        logging.error("Something went wrong while installing bun: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(e)
         return return_payload
@@ -120,12 +121,12 @@ def build_image(job):
         extracted_dir = next(os.walk(temp_dir))[1][0]
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
+        logging.error("Something went wrong while extracting repo: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(e) + error_msg
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
+        logging.error("Something went wrong while extracting repo: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(e)
         return return_payload
@@ -135,12 +136,12 @@ def build_image(job):
         os.makedirs(f"/app/{build_id}/cache", exist_ok=True)
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
+        logging.error("Something went wrong while creating cache directory: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(e) + error_msg
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
+        logging.error("Something went wrong while creating cache directory: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(e)
         return return_payload
@@ -156,15 +157,16 @@ def build_image(job):
             repo_dir + "/" + dockerfile_path, 
             project_id), cwd="/app", executable="/bin/bash", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=envs)
         for line in iter(process.stdout.readline, ""):
+            logging.info(f"log: {str(line)}")
             send_to_tinybird(build_id, "INFO", str(line), False)
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
-        logging.error("Something went wrong building the docker container: {}".format(parse_logs(error_msg)))
+        logging.error("Something went wrong building the docker image: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = "Something went wrong. Please view the debug logs."
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
+        logging.error("Something went wrong building the docker image: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = "Something went wrong. Please view the debug logs."
         return return_payload
@@ -181,12 +183,12 @@ def build_image(job):
         subprocess.run("bun install", cwd="/app/serverless-registry", capture_output=True, env=envs, shell=True, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
+        logging.error("Something went wrong while installing local dependencies: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(e) + error_msg
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
+        logging.error("Something went wrong while installing local dependencies: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(e)
         return return_payload
@@ -198,12 +200,12 @@ def build_image(job):
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
         normal_out = parse_logs(e.stdout)
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg) + normal_out))
+        logging.error("Something went wrong while pushing to registry: {}".format(parse_logs(error_msg) + normal_out))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(error_msg + "\n" + normal_out)
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
+        logging.error("Something went wrong while pushing to registry: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(e)
         return return_payload
