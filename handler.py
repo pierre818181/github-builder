@@ -160,20 +160,16 @@ def build_image(job):
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
         command = [
-            'depot', 'build',
-            '-t', cloudflare_destination,
-            repo_dir,
-            '--file', f"{repo_dir}/{dockerfile_path}",
-            '--load',
-            '--project', project_id
+            f'DEPOT_INSTALL_DIR="/root/.depot/bin" && depot build -t {cloudflare_destination} {repo_dir} --file {repo_dir}/{dockerfile_path}  --load --project {project_id}'
         ]
         process = subprocess.Popen(command, 
                                    cwd="/app", 
                                    bufsize=1, 
                                    stdout=subprocess.PIPE, 
-                                   stderr=subprocess.PIPE, 
-                                   env=envs, 
+                                   stderr=subprocess.PIPE,
+                                   env=envs,
                                    text=True, 
+                                   shell=True,
                                    executable="/bin/bash")
         with process.stdout as output:
             for line in output:
