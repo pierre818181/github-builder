@@ -156,9 +156,9 @@ def build_image(job):
             repo_dir, 
             repo_dir + "/" + dockerfile_path, 
             project_id), cwd="/app", executable="/bin/bash", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=envs)
-        for line in iter(process.stdout.readline, ""):
-            logging.info(f"log: {str(line)}")
-            send_to_tinybird(build_id, "INFO", str(line), False)
+        for line in iter(process.stdout.readline, b''):
+            logging.info(f"log: {str(line.decode('utf-8'))}")
+            send_to_tinybird(build_id, "INFO", str(line.decode('utf-8')), False)
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
         logging.error("Something went wrong building the docker image: {}".format(parse_logs(error_msg)))
