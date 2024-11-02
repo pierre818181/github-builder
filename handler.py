@@ -23,6 +23,8 @@ tinybird_auth_token = os.environ["TINYBIRD_APPEND_ONLY_TOKEN"]
 tinybird_url = "https://api.us-east.tinybird.co/v0"
 buffer = []
 def send_to_tinybird(build_id, level, log, last_line):
+    if not log or len(log) == 0:
+        return True
     global buffer
     log = { 
         "buildId": build_id, 
