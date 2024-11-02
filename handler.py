@@ -41,7 +41,7 @@ def send_to_tinybird(build_id, level, log, last_line):
             "Authorization": f"Bearer {tinybird_auth_token}",
             "Content-Type": "text/plain",
         }
-        
+        print(data)
         response = requests.post(url, data=data, headers=headers, timeout=10)
         response.raise_for_status()
         buffer = []
