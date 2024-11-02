@@ -38,7 +38,7 @@ def send_to_tinybird(build_id, level, log, last_line):
         url = f"{tinybird_url}/events?wait=true&name=github_build_logs"
         records = []
         for record in buffer:
-            records.append(json.dumps(record))
+            records.append(json.dumps(record, default=str))
         data = "\n".join(records)
         headers = {
             "Authorization": f"Bearer {tinybird_auth_token}",
