@@ -32,7 +32,7 @@ async def send_to_tinybird(build_id, level, log, last_line):
         "level": level, 
         "workerId": os.environ["RUNPOD_POD_ID"], 
         "message": parse_logs(log),
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(timespec=datetime.microseconds)
     }
     if log is not None and log != "":
         buffer.append(log)
