@@ -31,7 +31,7 @@ def send_to_tinybird(build_id, level, log, last_line):
         "level": level, 
         "workerId": os.environ["RUNPOD_POD_ID"], 
         "message": log,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        "timestamp": datetime.now()
     }
     buffer.append(parse_logs(log))
     if len(buffer) == 4 or (last_line and len(buffer) > 0):
