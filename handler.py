@@ -10,6 +10,7 @@ import re
 import requests
 import json
 from datetime import datetime
+import asyncio
 
 LOG_FORMAT = \
     '%(asctime)s [%(threadName)-16s] %(filename)27s:%(lineno)-4d %(levelname)7s| %(message)s'
@@ -22,7 +23,7 @@ tinybird_auth_token = os.environ["TINYBIRD_APPEND_ONLY_TOKEN"]
 
 tinybird_url = "https://api.us-east.tinybird.co/v0"
 buffer = []
-def send_to_tinybird(build_id, level, log, last_line):
+async def send_to_tinybird(build_id, level, log, last_line):
     if not log or len(log) == 0:
         return True
     global buffer
@@ -49,7 +50,7 @@ def send_to_tinybird(build_id, level, log, last_line):
 
     return True
 
-def build_image(job):
+async def build_image(job):
     job_input = job["input"]
     dockerfile_path = job_input["dockerfile_path"]
     build_id = job_input["build_id"]
@@ -174,16 +175,20 @@ def build_image(job):
                                    text=True, 
                                    shell=True,
                                    executable="/bin/bash")
+        log_tasks = []
         with process.stdout as output:
             for line in output:
                 content = line.strip()
                 print(f"{content}")
-                send_to_tinybird(build_id, "INFO", content, False)
+                log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "INFO", content, False)))
         with process.stderr as error:
             for line in error:
                 content = line.strip()
                 print(f"{content}")
-                send_to_tinybird(build_id, "ERROR", content, False)
+                log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "ERROR", content, False)))
+        for task in log_tasks:
+            await task
+
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
         logging.error("Something went wrong building the docker image: {}".format(parse_logs(error_msg)))
@@ -253,4 +258,4 @@ def build_image(job):
 
     return return_payload
 
-runpod.serverless.start({"handler": build_image})
+asyncio.run(runpod.serverless.start({"handler": build_image}))
