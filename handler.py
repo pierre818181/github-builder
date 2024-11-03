@@ -9,7 +9,7 @@ import logging
 import re
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import asyncio
 
 LOG_FORMAT = \
@@ -32,7 +32,7 @@ async def send_to_tinybird(build_id, level, log, last_line):
         "level": level, 
         "workerId": os.environ["RUNPOD_POD_ID"], 
         "message": parse_logs(log),
-        "timestamp": datetime.now().isoformat(timespec='milliseconds')
+        "timestamp": datetime.now().astimezone(timezone.utc).isoformat(timespec='milliseconds')
     }
     buffer.append(log)
     if len(buffer) >= 4 or (last_line and len(buffer) > 0):
