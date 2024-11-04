@@ -170,7 +170,7 @@ async def build_image(job):
         process = subprocess.Popen(command, 
                                    cwd="/app", 
                                    bufsize=1, 
-                                   stdout=subprocess.STDOUT, 
+                                   stdout=subprocess.PIPE, 
                                    stderr=subprocess.PIPE,
                                    env=envs,
                                    text=True, 
