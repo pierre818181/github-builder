@@ -35,7 +35,7 @@ async def send_to_tinybird(build_id, level, log, last_line):
         "timestamp": datetime.now().astimezone(timezone.utc).isoformat(timespec='milliseconds')
     }
     buffer.append(log)
-    if len(buffer) >= 10 or (last_line and len(buffer) > 0):
+    if len(buffer) >= 16 or (last_line and len(buffer) > 0):
         url = f"{tinybird_url}/events?wait=true&name=github_build_logs"
         records = '\n'.join([json.dumps(buf) for buf in buffer])
         headers = {
@@ -168,6 +168,7 @@ async def build_image(job):
     if "/root/.depot/bin" not in sys.path:
         sys.path.append("/root/.depot/bin")
 
+    temp_image_name = cloudflare_destination + '-rp-github-build'
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
         await send_to_tinybird(build_id, "INFO", "Build using docker", True)
@@ -234,6 +235,23 @@ async def build_image(job):
         return_payload["status"] = "failed"
         return_payload["error_msg"] = parse_logs(e)
         return return_payload
+    
+    logging.info("Retagging image")
+    try:
+        await send_to_tinybird(build_id, "INFO", "Tagging docker image.", True)
+        run_command = "docker tag {} {}".format(temp_image_name, cloudflare_destination)
+        subprocess.run(install_command, shell=True, executable="/bin/bash", check=True, capture_output=True, env=envs)
+    except subprocess.CalledProcessError as e:
+        error_msg = parse_logs(e.stderr)
+        logging.error("Something went wrong tagging the image: {}".format(parse_logs(error_msg)))
+        return_payload["status"] = "failed"
+        return_payload["error_msg"] = parse_logs(e) + error_msg
+        return return_payload
+    except Exception as e:
+        logging.error("Something went wrong tagging the image: {}".format(parse_logs(e)))
+        return_payload["status"] = "failed"
+        return_payload["error_msg"] = parse_logs(e)
+        return return_payload
 
     logging.info("Pushing image to registry")
     await send_to_tinybird(build_id, "INFO", "Pushing image to registry.", True)
@@ -253,12 +271,12 @@ async def build_image(job):
             for line in output:
                 content = line.strip()
                 print(f"{content}")
-                log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "INFO", content, False)))
+                await send_to_tinybird(build_id, "INFO", content, False)
         with process.stderr as error:
             for line in error:
                 content = line.strip()
                 print(f"{content}")
-                log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "ERROR", content, False)))
+                await send_to_tinybird(build_id, "ERROR", content, False)
         for task in log_tasks:
             await task
         # subprocess.run(run_command, cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, check=True, executable="/bin/bash")
