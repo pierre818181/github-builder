@@ -17,7 +17,7 @@ LOG_FORMAT = \
 logging.getLogger().setLevel(logging.INFO)
 
 def parse_logs(s):
-    return str(s).replace("depot", "******").replace("DEPOT", "******").replace(str(os.environ["GIT_INTEGRATIONS_SECRET"]), "*****").replace("r2-registry-production.pierre-bastola.workers.dev", "*****")
+    return str(s).replace("depot", "******").replace("depot.dev", "******").replace("DEPOT", "******").replace(str(os.environ["GIT_INTEGRATIONS_SECRET"]), "*****").replace("r2-registry-production.pierre-bastola.workers.dev", "*****")
 
 tinybird_auth_token = os.environ["TINYBIRD_APPEND_ONLY_TOKEN"]
 
@@ -170,7 +170,7 @@ async def build_image(job):
         process = subprocess.Popen(command, 
                                    cwd="/app", 
                                    bufsize=1, 
-                                   stdout=subprocess.PIPE, 
+                                   stdout=subprocess.STDOUT, 
                                    stderr=subprocess.PIPE,
                                    env=envs,
                                    text=True, 
