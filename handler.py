@@ -78,6 +78,7 @@ async def build_image(job):
 
     envs = os.environ.copy()
     try:
+        send_to_tinybird(build_id, "INFO", "Instaling dependencies", True)
         install_command = "curl -fsSL https://bun.sh/install | bash"
         subprocess.run(install_command, shell=True, executable="/bin/bash", check=True, capture_output=True, env=envs)
     except subprocess.CalledProcessError as e:
@@ -114,6 +115,7 @@ async def build_image(job):
         "X-GitHub-Api-Version": "2022-11-28"
     }
     try:
+        send_to_tinybird(build_id, "INFO", "Downloading repo.", True)
         response = requests.get(api_url, headers=headers, stream=True)
         response.raise_for_status()
     except Exception as e:
@@ -125,6 +127,7 @@ async def build_image(job):
     logging.info(f"Extracting {github_repo} at {ref}")
     temp_dir = f"/app/{build_id}/temp"
     try:
+        send_to_tinybird(build_id, "INFO", "Extracting repo.", True)
         os.makedirs(temp_dir, exist_ok=True)
         with tarfile.open(fileobj=io.BytesIO(response.content), mode="r:gz") as tar:
             tar.extractall(path=temp_dir)
@@ -142,6 +145,7 @@ async def build_image(job):
         return return_payload
     
     logging.info("Creating cache directory")
+    send_to_tinybird(build_id, "INFO", "Creating cache directory.", True)
     try:
         os.makedirs(f"/app/{build_id}/cache", exist_ok=True)
     except subprocess.CalledProcessError as e:
@@ -164,6 +168,7 @@ async def build_image(job):
 
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
+        send_to_tinybird(build_id, "INFO", "Build using docker", True)
         command = [
             f'DEPOT_INSTALL_DIR="/root/.depot/bin" && /root/.depot/bin/depot build -t {cloudflare_destination} {repo_dir} --file {repo_dir}/{dockerfile_path}  --load --project {project_id}'
         ]
@@ -189,17 +194,16 @@ async def build_image(job):
                 log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "ERROR", content, False)))
         for task in log_tasks:
             await task
-
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
         logging.error("Something went wrong building the docker image: {}".format(parse_logs(error_msg)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = "Something went wrong. Please view the debug logs."
+        return_payload["error_msg"] = "Something went wrong. Please view the build logs."
         return return_payload
     except Exception as e:
         logging.error("Something went wrong building the docker image: {}".format(parse_logs(e)))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = "Something went wrong. Please view the debug logs."
+        return_payload["error_msg"] = "Something went wrong. Please view the build logs."
         return return_payload
     send_to_tinybird(build_id, "INFO", str("Build complete."), True)
 
@@ -226,9 +230,32 @@ async def build_image(job):
         return return_payload
 
     logging.info("Pushing image to registry")
+    send_to_tinybird(build_id, "INFO", "Pushing image to registry.", True)
     run_command = "REGISTRY_JWT_TOKEN={} USERNAME_REGISTRY=pierre bun run index.ts {}".format(jwt_token, cloudflare_destination)
     try:
-        subprocess.run(run_command, cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, check=True, executable="/bin/bash")
+        process = subprocess.Popen(run_command, 
+                                   cwd="/app/serverless-registry/push", 
+                                   bufsize=1, 
+                                   stdout=subprocess.PIPE, 
+                                   stderr=subprocess.PIPE,
+                                   env=envs,
+                                   text=True, 
+                                   shell=True,
+                                   executable="/bin/bash")
+        log_tasks = []
+        with process.stdout as output:
+            for line in output:
+                content = line.strip()
+                print(f"{content}")
+                log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "INFO", content, False)))
+        with process.stderr as error:
+            for line in error:
+                content = line.strip()
+                print(f"{content}")
+                log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "ERROR", content, False)))
+        for task in log_tasks:
+            await task
+        # subprocess.run(run_command, cwd="/app/serverless-registry/push", capture_output=True, env=envs, shell=True, check=True, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
         error_msg = parse_logs(e.stderr)
         normal_out = parse_logs(e.stdout)
@@ -242,21 +269,6 @@ async def build_image(job):
         return_payload["error_msg"] = parse_logs(e)
         return return_payload
     
-    # logging.info(f"Cleaning up")
-    # try:
-    #     subprocess.run("rm -rf /app/{}".format(build_id), executable="/bin/bash", capture_output=True, shell=True, env=envs, check=True)
-    # except subprocess.CalledProcessError as e:
-    #     error_msg = parse_logs(e.stderr)
-    #     logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(error_msg)))
-    #     return_payload["status"] = "failed"
-    #     return_payload["error_msg"] = parse_logs(e) + error_msg
-    #     return return_payload
-    # except Exception as e:
-    #     logging.error("Something went wrong while downloading the repo: {}".format(parse_logs(e)))
-    #     return_payload["status"] = "failed"
-    #     return_payload["error_msg"] = parse_logs(e)
-    #     return return_payload
-
     return return_payload
 
 asyncio.run(runpod.serverless.start({"handler": build_image}))
