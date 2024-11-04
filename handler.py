@@ -198,12 +198,14 @@ async def build_image(job):
         logging.error("Something went wrong building the docker image: {}".format(error_msg))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = "Something went wrong. Please view the build logs: {}".format(error_msg)
+        await send_to_tinybird(build_id, "ERROR", error_msg, False)
         return return_payload
     except Exception as e:
         error_msg = parse_logs(e)
         logging.error("Something went wrong building the docker image: {}".format(error_msg))
         return_payload["status"] = "failed"
         return_payload["error_msg"] = "Something went wrong. Please view the build logs: {}".format(error_msg)
+        await send_to_tinybird(build_id, "ERROR", error_msg, False)
         return return_payload
     await send_to_tinybird(build_id, "INFO", str("Build complete."), True)
 
