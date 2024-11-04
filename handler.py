@@ -78,7 +78,7 @@ async def build_image(job):
 
     envs = os.environ.copy()
     try:
-        send_to_tinybird(build_id, "INFO", "Instaling dependencies", True)
+        await send_to_tinybird(build_id, "INFO", "Instaling dependencies", True)
         install_command = "curl -fsSL https://bun.sh/install | bash"
         subprocess.run(install_command, shell=True, executable="/bin/bash", check=True, capture_output=True, env=envs)
     except subprocess.CalledProcessError as e:
@@ -115,7 +115,7 @@ async def build_image(job):
         "X-GitHub-Api-Version": "2022-11-28"
     }
     try:
-        send_to_tinybird(build_id, "INFO", "Downloading repo.", True)
+        await send_to_tinybird(build_id, "INFO", "Downloading repo.", True)
         response = requests.get(api_url, headers=headers, stream=True)
         response.raise_for_status()
     except Exception as e:
@@ -127,7 +127,7 @@ async def build_image(job):
     logging.info(f"Extracting {github_repo} at {ref}")
     temp_dir = f"/app/{build_id}/temp"
     try:
-        send_to_tinybird(build_id, "INFO", "Extracting repo.", True)
+        await send_to_tinybird(build_id, "INFO", "Extracting repo.", True)
         os.makedirs(temp_dir, exist_ok=True)
         with tarfile.open(fileobj=io.BytesIO(response.content), mode="r:gz") as tar:
             tar.extractall(path=temp_dir)
@@ -145,7 +145,7 @@ async def build_image(job):
         return return_payload
     
     logging.info("Creating cache directory")
-    send_to_tinybird(build_id, "INFO", "Creating cache directory.", True)
+    await send_to_tinybird(build_id, "INFO", "Creating cache directory.", True)
     try:
         os.makedirs(f"/app/{build_id}/cache", exist_ok=True)
     except subprocess.CalledProcessError as e:
@@ -168,7 +168,7 @@ async def build_image(job):
 
     repo_dir = "/app/{}/temp/{}".format(build_id, extracted_dir)
     try: 
-        send_to_tinybird(build_id, "INFO", "Build using docker", True)
+        await send_to_tinybird(build_id, "INFO", "Build using docker", True)
         command = [
             f'DEPOT_INSTALL_DIR="/root/.depot/bin" && /root/.depot/bin/depot build -t {cloudflare_destination} {repo_dir} --file {repo_dir}/{dockerfile_path}  --load --project {project_id}'
         ]
@@ -205,7 +205,7 @@ async def build_image(job):
         return_payload["status"] = "failed"
         return_payload["error_msg"] = "Something went wrong. Please view the build logs."
         return return_payload
-    send_to_tinybird(build_id, "INFO", str("Build complete."), True)
+    await send_to_tinybird(build_id, "INFO", str("Build complete."), True)
 
     logging.info("Installing dependencies")
     envs["USERNAME_REGISTRY"] = username_registry
@@ -230,7 +230,7 @@ async def build_image(job):
         return return_payload
 
     logging.info("Pushing image to registry")
-    send_to_tinybird(build_id, "INFO", "Pushing image to registry.", True)
+    await send_to_tinybird(build_id, "INFO", "Pushing image to registry.", True)
     run_command = "REGISTRY_JWT_TOKEN={} USERNAME_REGISTRY=pierre bun run index.ts {}".format(jwt_token, cloudflare_destination)
     try:
         process = subprocess.Popen(run_command, 
