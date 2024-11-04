@@ -35,15 +35,14 @@ async def send_to_tinybird(build_id, level, log, last_line):
         "timestamp": datetime.now().astimezone(timezone.utc).isoformat(timespec='milliseconds')
     }
     buffer.append(log)
-    if len(buffer) >= 4 or (last_line and len(buffer) > 0):
+    if len(buffer) >= 10 or (last_line and len(buffer) > 0):
         url = f"{tinybird_url}/events?wait=true&name=github_build_logs"
         records = '\n'.join([json.dumps(buf) for buf in buffer])
         headers = {
             "Authorization": f"Bearer {tinybird_auth_token}",
             "Content-Type": "text/plain",
         }
-        response = requests.post(url, data=records, headers=headers, timeout=10)
-        # response.raise_for_status()
+        response = requests.post(url, data=records, headers=headers, timeout=1)
         if response.status_code > 200:
             print(str(response.content))
         buffer = []
@@ -185,7 +184,8 @@ async def build_image(job):
             for line in error:
                 content = line.strip()
                 print(f"{content}")
-                log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "ERROR", content, False)))
+                await send_to_tinybird(build_id, "ERROR", content, False)
+                # log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "ERROR", content, False)))
         with process.stdout as output:
             for line in output:
                 content = line.strip()
