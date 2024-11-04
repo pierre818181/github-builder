@@ -42,9 +42,12 @@ async def send_to_tinybird(build_id, level, log, last_line):
             "Authorization": f"Bearer {tinybird_auth_token}",
             "Content-Type": "text/plain",
         }
-        response = requests.post(url, data=records, headers=headers, timeout=1)
-        if response.status_code > 200:
-            print(str(response.content))
+        try:
+            response = requests.post(url, data=records, headers=headers, timeout=1)
+            if response.status_code > 200:
+                print(str(response.content))
+        except Exception as e:
+            logging.error("Could not send logs to tinybird: {}".format(str(e)))
         buffer = []
 
     return True
