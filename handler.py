@@ -48,6 +48,7 @@ async def send_to_tinybird(build_id, level, log, last_line):
                 print(str(response.content))
         except Exception as e:
             logging.error("Could not send logs to tinybird: {}".format(str(e)))
+            return True
         buffer = []
 
     return True
@@ -274,6 +275,9 @@ async def build_image(job):
         return_payload["error_msg"] = parse_logs(e)
         return return_payload
     
+    await send_to_tinybird(build_id, "INFO", "Successfully pushed image to registry.", True)
+
+    # remove image using docker
     return return_payload
 
 asyncio.run(runpod.serverless.start({"handler": build_image}))
