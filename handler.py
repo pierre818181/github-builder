@@ -194,15 +194,16 @@ async def build_image(job):
         for task in log_tasks:
             await task
     except subprocess.CalledProcessError as e:
-        error_msg = parse_logs(e.stderr)
-        logging.error("Something went wrong building the docker image: {}".format(parse_logs(error_msg)))
+        error_msg = parse_logs(e.stderr) + "\n" + parse_logs(e.stdout)
+        logging.error("Something went wrong building the docker image: {}".format(error_msg))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = "Something went wrong. Please view the build logs."
+        return_payload["error_msg"] = "Something went wrong. Please view the build logs: {}".format(error_msg)
         return return_payload
     except Exception as e:
-        logging.error("Something went wrong building the docker image: {}".format(parse_logs(e)))
+        error_msg = parse_logs(e)
+        logging.error("Something went wrong building the docker image: {}".format(error_msg))
         return_payload["status"] = "failed"
-        return_payload["error_msg"] = "Something went wrong. Please view the build logs."
+        return_payload["error_msg"] = "Something went wrong. Please view the build logs: {}".format(error_msg)
         return return_payload
     await send_to_tinybird(build_id, "INFO", str("Build complete."), True)
 
