@@ -181,16 +181,16 @@ async def build_image(job):
                                    shell=True,
                                    executable="/bin/bash")
         log_tasks = []
-        with process.stdout as output:
-            for line in output:
-                content = line.strip()
-                print(f"{content}")
-                log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "INFO", content, False)))
         with process.stderr as error:
             for line in error:
                 content = line.strip()
                 print(f"{content}")
                 log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "ERROR", content, False)))
+        with process.stdout as output:
+            for line in output:
+                content = line.strip()
+                print(f"{content}")
+                log_tasks.append(asyncio.create_task(send_to_tinybird(build_id, "INFO", content, False)))
         for task in log_tasks:
             await task
     except subprocess.CalledProcessError as e:
